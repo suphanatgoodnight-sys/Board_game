@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BoardGame } from '../types';
 import { recordBorrowing } from '../services/googleSheetService';
@@ -26,15 +25,18 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
     setIsLoading(true);
 
     try {
-      await recordBorrowing({
+      const result = await recordBorrowing({
         name,
         studentId,
         classroom,
         games: selectedGames.map(g => g.name),
       });
-      // Note: Because we use 'no-cors', we cannot check the response status.
-      // We assume success and proceed.
-      onSuccess();
+      
+      if (result.success) {
+        onSuccess();
+      } else {
+        setError(result.message || 'เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง');
+      }
     } catch (err) {
       setError('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง');
       console.error(err);
@@ -60,7 +62,7 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            placeholder="เช่น สมชาย ใจดี"
+            placeholder="เช่น ศุภนัฐ ลูกยอ"
             required
           />
         </div>
@@ -72,7 +74,7 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            placeholder="เช่น 65012345"
+            placeholder="เช่น 10957"
             required
           />
         </div>
@@ -84,7 +86,7 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
             value={classroom}
             onChange={(e) => setClassroom(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            placeholder="เช่น ม.4/1"
+            placeholder="เช่น 000"
             required
           />
         </div>

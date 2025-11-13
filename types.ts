@@ -1,4 +1,3 @@
-
 export interface BoardGame {
   id: number;
   name: string;
@@ -11,6 +10,7 @@ export enum View {
   List = 'LIST',
   BorrowForm = 'BORROW_FORM',
   BorrowSuccess = 'BORROW_SUCCESS',
+  ManageGames = 'MANAGE_GAMES',
 }
 
 export interface BorrowerInfo {

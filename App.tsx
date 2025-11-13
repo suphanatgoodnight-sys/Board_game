@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { BoardGame, View } from './types';
 import { INITIAL_BOARD_GAMES } from './data/boardGames';
@@ -7,6 +6,7 @@ import BoardGameList from './components/BoardGameList';
 import ConfirmationModal from './components/ConfirmationModal';
 import BorrowForm from './components/BorrowForm';
 import ReturnModal from './components/ReturnModal';
+import ManageGamesView from './components/ManageGamesView';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.List);
@@ -44,6 +44,15 @@ const App: React.FC = () => {
       prevGames.map(game => ({ ...game, selected: false }))
     );
   };
+  
+  const handleAddGame = (newGameData: { name: string; description: string; imageUrl: string; }) => {
+    const newGame: BoardGame = {
+      ...newGameData,
+      id: boardGames.length > 0 ? Math.max(...boardGames.map(g => g.id)) + 1 : 1,
+      selected: false,
+    };
+    setBoardGames(prevGames => [...prevGames, newGame]);
+  };
 
   const handleBackToList = () => {
     setView(View.List);
@@ -71,6 +80,8 @@ const App: React.FC = () => {
             </button>
           </div>
         );
+      case View.ManageGames:
+        return <ManageGamesView boardGames={boardGames} onAddGame={handleAddGame} onBack={handleBackToList} />;
       case View.List:
       default:
         return (
@@ -86,7 +97,7 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-gray-800">
-      <Header onReturnClick={() => setReturnModalOpen(true)} />
+      <Header onReturnClick={() => setReturnModalOpen(true)} onManageClick={() => setView(View.ManageGames)} />
       <main className="container mx-auto px-4 py-8">
         {renderContent()}
       </main>
@@ -101,8 +112,8 @@ const App: React.FC = () => {
 
       {isReturnModalOpen && (
         <ReturnModal
-          onClose={() => setReturnModalOpen(false)}
           boardGames={boardGames}
+          onClose={() => setReturnModalOpen(false)}
         />
       )}
     </div>

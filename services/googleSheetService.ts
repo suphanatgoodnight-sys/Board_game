@@ -1,15 +1,25 @@
-
 import { BorrowerInfo } from '../types';
 
 // ใส่ URL ของ Apps Script ที่ deploy แล้ว
 const GOOGLE_SHEET_API_URL =
-  'https://script.google.com/macros/s/AKfycbwMAVU911bfBxh--PDg1l15W0qM3EflxVv-KVLMlV34LpuZnJBZeRtkjq8lqky6g8sRTQ/exec';
+  'https://script.google.com/macros/s/AKfycbznfXESLJAZ0RSZCyMyyUI0m6r6L310GYNDpDdwjHlT-stRX6glqBUZXezHJA6hNJSFxA/exec';
 
-export const recordBorrowing = async (borrowerInfo: BorrowerInfo): Promise<boolean> => {
+interface ApiResponse {
+  status: 'success' | 'not_found' | 'error';
+  message?: string;
+  games?: string[];
+}
+
+interface ServiceResponse {
+  success: boolean;
+  message?: string;
+}
+
+export const recordBorrowing = async (borrowerInfo: BorrowerInfo): Promise<ServiceResponse> => {
   try {
-    // The Apps Script seems to expect one game per request to update statuses correctly.
     // We send one request for each borrowed game.
-    const requests = borrowerInfo.games.map(gameName => {
+    // If any request fails, especially the first one with a student ID error, we stop.
+    for (const gameName of borrowerInfo.games) {
       const payload = {
         action: 'borrow',
         Name: borrowerInfo.name,
@@ -18,27 +28,39 @@ export const recordBorrowing = async (borrowerInfo: BorrowerInfo): Promise<boole
         Board_Game: gameName,
       };
 
-      return fetch(GOOGLE_SHEET_API_URL, {
+      const response = await fetch(GOOGLE_SHEET_API_URL, {
         method: 'POST',
-        mode: 'no-cors',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify(payload),
       });
-    });
+      
+      const text = await response.text();
+      try {
+        const result: ApiResponse = JSON.parse(text);
+        if (result.status === 'error') {
+          // If there's an error (like invalid student ID), stop and return the message.
+          console.error('Error from Google Sheet:', result.message);
+          return { success: false, message: result.message };
+        }
+      } catch (e) {
+        // This handles cases where the response is not valid JSON
+        console.error('Failed to parse JSON response from Google Sheet. Raw response:', text);
+        return { success: false, message: 'An unexpected response was received from the server.' };
+      }
+    }
 
-    await Promise.all(requests);
+    // If all requests went through without an 'error' status
+    return { success: true };
 
-    // With 'no-cors', we cannot read the response, so we assume the request was successful.
-    return true;
   } catch (error) {
     console.error('❌ Error sending to Google Sheet:', error);
-    return false;
+    return { success: false, message: 'Failed to connect to the server.' };
   }
 };
 
-export const recordReturn = async (studentId: string, gameName: string): Promise<boolean> => {
+export const recordReturn = async (studentId: string, gameName: string): Promise<ServiceResponse> => {
   try {
     const payload = {
       action: 'return',
@@ -46,19 +68,30 @@ export const recordReturn = async (studentId: string, gameName: string): Promise
       Board_Game: gameName,
     };
 
-    await fetch(GOOGLE_SHEET_API_URL, {
+    const response = await fetch(GOOGLE_SHEET_API_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: {
-        'Content-Type': 'application/json',
+        // Change Content-Type to avoid CORS preflight request.
+        'Content-Type': 'text/plain;charset=utf-8',
       },
       body: JSON.stringify(payload),
     });
 
-    // With 'no-cors', we cannot read the response, so we assume the request was successful.
-    return true;
+    const text = await response.text();
+    try {
+      const result: ApiResponse = JSON.parse(text);
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        // This will now handle the specific error "ไม่พบเลขประจำตัวนักเรียนที่ยืมบอร์ดเกม"
+        return { success: false, message: result.message };
+      }
+    } catch (e) {
+      console.error('Failed to parse JSON response on return. Raw response:', text);
+      return { success: false, message: 'An unexpected response was received from the server.' };
+    }
   } catch (error) {
     console.error('❌ Error sending return to Google Sheet:', error);
-    return false;
+    return { success: false, message: 'Failed to connect to the server.' };
   }
 };
