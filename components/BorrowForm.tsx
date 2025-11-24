@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BoardGame } from '../types';
 import { recordBorrowing } from '../services/googleSheetService';
@@ -8,16 +9,24 @@ interface BorrowFormProps {
   onBack: () => void;
 }
 
+const MAJORS = [
+  'การบัญชี',
+  'การตลาด',
+  'คอมพิวเตอร์ธุรกิจ',
+  'ภาษาต่างประเทศ',
+];
+
 const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBack }) => {
-  const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [classroom, setClassroom] = useState('');
+  const [numberOfPlayers, setNumberOfPlayers] = useState('');
+  const [major, setMajor] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !studentId || !classroom) {
+    if (!studentId || !classroom || !numberOfPlayers || !major) {
       setError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
       return;
     }
@@ -26,9 +35,10 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
 
     try {
       const result = await recordBorrowing({
-        name,
-        studentId,
-        classroom,
+        studentId: studentId.trim(),
+        classroom: classroom.trim(),
+        numberOfPlayers: numberOfPlayers.trim(),
+        major,
         games: selectedGames.map(g => g.name),
       });
       
@@ -55,18 +65,6 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล ผู้ยืม</label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            placeholder="เช่น ศุภนัฐ ลูกยอ"
-            required
-          />
-        </div>
-        <div>
           <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัวนักศึกษา</label>
           <input
             type="text"
@@ -89,6 +87,34 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
             placeholder="เช่น 000"
             required
           />
+        </div>
+        <div>
+          <label htmlFor="numberOfPlayers" className="block text-sm font-medium text-gray-700 mb-1">จำนวนผู้เล่น</label>
+          <input
+            type="number"
+            id="numberOfPlayers"
+            value={numberOfPlayers}
+            onChange={(e) => setNumberOfPlayers(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            placeholder="ระบุจำนวนผู้เล่น"
+            min="1"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="major" className="block text-sm font-medium text-gray-700 mb-1">สาขาห้องเรียน</label>
+          <select
+            id="major"
+            value={major}
+            onChange={(e) => setMajor(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+            required
+          >
+            <option value="">-- เลือกสาขา --</option>
+            {MAJORS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
         </div>
         <button
           type="submit"

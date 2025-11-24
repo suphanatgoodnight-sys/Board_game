@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { BoardGame, View } from './types';
 import { INITIAL_BOARD_GAMES } from './data/boardGames';
@@ -54,6 +55,16 @@ const App: React.FC = () => {
     setBoardGames(prevGames => [...prevGames, newGame]);
   };
 
+  const handleUpdateGame = (updatedGame: BoardGame) => {
+    setBoardGames(prevGames =>
+      prevGames.map(game => (game.id === updatedGame.id ? updatedGame : game))
+    );
+  };
+
+  const handleDeleteGames = (ids: number[]) => {
+    setBoardGames(prevGames => prevGames.filter(game => !ids.includes(game.id)));
+  };
+
   const handleBackToList = () => {
     setView(View.List);
   };
@@ -81,7 +92,15 @@ const App: React.FC = () => {
           </div>
         );
       case View.ManageGames:
-        return <ManageGamesView boardGames={boardGames} onAddGame={handleAddGame} onBack={handleBackToList} />;
+        return (
+          <ManageGamesView 
+            boardGames={boardGames} 
+            onAddGame={handleAddGame} 
+            onUpdateGame={handleUpdateGame}
+            onDeleteGames={handleDeleteGames}
+            onBack={handleBackToList} 
+          />
+        );
       case View.List:
       default:
         return (

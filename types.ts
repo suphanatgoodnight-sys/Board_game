@@ -1,3 +1,4 @@
+
 export interface BoardGame {
   id: number;
   name: string;
@@ -14,8 +15,9 @@ export enum View {
 }
 
 export interface BorrowerInfo {
-  name: string;
   studentId: string;
   classroom: string;
+  numberOfPlayers: string;
+  major: string;
   games: string[];
 }
