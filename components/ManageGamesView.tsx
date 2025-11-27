@@ -158,7 +158,7 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = ${JSON.stringify(gamesForExport,
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="เช่น Catan"
+                placeholder="เช่น Suphanat112"
                 required
               />
             </div>
