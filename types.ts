@@ -5,6 +5,8 @@ export interface BoardGame {
   description: string;
   imageUrl: string;
   selected: boolean;
+  category: string;
+  isPopular: boolean;
 }
 
 export enum View {
@@ -12,6 +14,7 @@ export enum View {
   BorrowForm = 'BORROW_FORM',
   BorrowSuccess = 'BORROW_SUCCESS',
   ManageGames = 'MANAGE_GAMES',
+  Search = 'SEARCH',
 }
 
 export interface BorrowerInfo {

@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BoardGame, View } from './types';
 import { INITIAL_BOARD_GAMES } from './data/boardGames';
 import Header from './components/Header';
@@ -8,12 +8,38 @@ import ConfirmationModal from './components/ConfirmationModal';
 import BorrowForm from './components/BorrowForm';
 import ReturnModal from './components/ReturnModal';
 import ManageGamesView from './components/ManageGamesView';
+import SearchView from './components/SearchView';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.List);
-  const [boardGames, setBoardGames] = useState<BoardGame[]>(INITIAL_BOARD_GAMES);
+  
+  // Initialize state from localStorage if available, otherwise use default data
+  const [boardGames, setBoardGames] = useState<BoardGame[]>(() => {
+    try {
+      const savedGames = localStorage.getItem('boardGames');
+      if (savedGames) {
+        const parsed: any[] = JSON.parse(savedGames);
+        // Migration for old data: Add default category and isPopular if missing
+        return parsed.map(game => ({
+          ...game,
+          category: game.category || 'เกมวางกลยุทธ์',
+          isPopular: game.isPopular ?? false,
+        }));
+      }
+      return INITIAL_BOARD_GAMES;
+    } catch (error) {
+      console.error('Error loading board games from localStorage:', error);
+      return INITIAL_BOARD_GAMES;
+    }
+  });
+
   const [isConfirmationModalOpen, setConfirmationModalOpen] = useState(false);
   const [isReturnModalOpen, setReturnModalOpen] = useState(false);
+
+  // Save to localStorage whenever boardGames changes
+  useEffect(() => {
+    localStorage.setItem('boardGames', JSON.stringify(boardGames));
+  }, [boardGames]);
 
   const selectedGames = useMemo(() => boardGames.filter(game => game.selected), [boardGames]);
 
@@ -46,7 +72,7 @@ const App: React.FC = () => {
     );
   };
   
-  const handleAddGame = (newGameData: { name: string; description: string; imageUrl: string; }) => {
+  const handleAddGame = (newGameData: { name: string; description: string; imageUrl: string; category: string; isPopular: boolean }) => {
     const newGame: BoardGame = {
       ...newGameData,
       id: boardGames.length > 0 ? Math.max(...boardGames.map(g => g.id)) + 1 : 1,
@@ -65,12 +91,29 @@ const App: React.FC = () => {
     setBoardGames(prevGames => prevGames.filter(game => !ids.includes(game.id)));
   };
 
+  const handleResetData = () => {
+    if (window.confirm('คุณต้องการรีเซ็ตข้อมูลบอร์ดเกมทั้งหมดให้กลับเป็นค่าเริ่มต้นตามไฟล์ระบบใช่หรือไม่? ข้อมูลที่คุณเพิ่มเองจะหายไป')) {
+      setBoardGames(INITIAL_BOARD_GAMES);
+      localStorage.removeItem('boardGames'); // Optional: clear storage directly to ensure clean slate
+    }
+  };
+
   const handleBackToList = () => {
     setView(View.List);
   };
 
   const renderContent = () => {
     switch (view) {
+      case View.Search:
+        return (
+          <SearchView
+            boardGames={boardGames}
+            onToggleSelect={handleToggleSelect}
+            onConfirm={handleConfirmSelection}
+            selectedCount={selectedGames.length}
+            onBack={handleBackToList}
+          />
+        );
       case View.BorrowForm:
         return <BorrowForm selectedGames={selectedGames} onSuccess={handleBorrowSuccess} onBack={handleBackToList} />;
       case View.BorrowSuccess:
@@ -98,6 +141,7 @@ const App: React.FC = () => {
             onAddGame={handleAddGame} 
             onUpdateGame={handleUpdateGame}
             onDeleteGames={handleDeleteGames}
+            onResetData={handleResetData}
             onBack={handleBackToList} 
           />
         );
@@ -116,7 +160,11 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-gray-800">
-      <Header onReturnClick={() => setReturnModalOpen(true)} onManageClick={() => setView(View.ManageGames)} />
+      <Header 
+        onReturnClick={() => setReturnModalOpen(true)} 
+        onManageClick={() => setView(View.ManageGames)}
+        onSearchClick={() => setView(View.Search)}
+      />
       <main className="container mx-auto px-4 py-8">
         {renderContent()}
       </main>

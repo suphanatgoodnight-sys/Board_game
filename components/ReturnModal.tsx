@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { BoardGame } from '../types';
 import { recordReturn } from '../services/googleSheetService';
@@ -14,7 +15,11 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ boardGames, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -27,6 +32,17 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ boardGames, onClose }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Reset search and focus input when opened
+  useEffect(() => {
+    if (isDropdownOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearchTerm('');
+    }
+  }, [isDropdownOpen]);
 
   const handleCheckboxChange = (gameName: string) => {
     setSelectedGames(prevSelected => {
@@ -52,7 +68,6 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ boardGames, onClose }) => {
       const results = await Promise.all(returnPromises);
       
       // Check for the first failed result to display the correct error message
-      // This will correctly show "ไม่พบเลขประจำตัวนักเรียนที่ยืมบอร์ดเกม" if the script returns it.
       const firstFailedResult = results.find(res => !res.success);
       
       if (firstFailedResult) {
@@ -73,6 +88,11 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ boardGames, onClose }) => {
   const dropdownText = selectedGames.length === 0 
     ? '-- เลือกบอร์ดเกม --' 
     : `เลือกแล้ว ${selectedGames.length} รายการ`;
+
+  // Filter games based on search term
+  const filteredGames = boardGames.filter(game => 
+    game.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
@@ -111,28 +131,54 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ boardGames, onClose }) => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white text-left flex justify-between items-center"
               >
-                <span>{dropdownText}</span>
+                <span className={selectedGames.length === 0 ? "text-gray-500" : "text-gray-900"}>{dropdownText}</span>
                 <svg className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  <ul>
-                    {boardGames.map(game => (
-                      <li key={game.id} className="hover:bg-gray-100">
-                        <label className="flex items-center justify-between w-full px-4 py-2 cursor-pointer">
-                          <span className="text-gray-800">{game.name}</span>
-                          <input
-                            type="checkbox"
-                            checked={selectedGames.includes(game.name)}
-                            onChange={() => handleCheckboxChange(game.name)}
-                            className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                        </label>
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden flex flex-col">
+                  {/* Search Bar inside dropdown */}
+                  <div className="p-2 border-b border-gray-100 bg-gray-50 sticky top-0 z-20">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                      </div>
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="ค้นหาชื่อเกม..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking input
+                      />
+                    </div>
+                  </div>
+
+                  <ul className="max-h-60 overflow-y-auto">
+                    {filteredGames.length > 0 ? (
+                      filteredGames.map(game => (
+                        <li key={game.id} className="hover:bg-gray-50 border-b border-gray-50 last:border-none">
+                          <label className="flex items-center justify-between w-full px-4 py-3 cursor-pointer select-none">
+                            <span className="text-gray-800 text-sm">{game.name}</span>
+                            <input
+                              type="checkbox"
+                              checked={selectedGames.includes(game.name)}
+                              onChange={() => handleCheckboxChange(game.name)}
+                              className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                          </label>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="px-4 py-4 text-gray-500 text-center text-sm">
+                        ไม่พบเกมที่ค้นหา
                       </li>
-                    ))}
+                    )}
                   </ul>
                 </div>
               )}

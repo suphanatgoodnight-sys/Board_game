@@ -4,16 +4,27 @@ import { BoardGame } from '../types';
 
 interface ManageGamesViewProps {
   boardGames: BoardGame[];
-  onAddGame: (newGame: { name: string; description: string; imageUrl: string }) => void;
+  onAddGame: (newGame: { name: string; description: string; imageUrl: string; category: string; isPopular: boolean }) => void;
   onUpdateGame: (game: BoardGame) => void;
   onDeleteGames: (ids: number[]) => void;
+  onResetData: () => void;
   onBack: () => void;
 }
 
-const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame, onUpdateGame, onDeleteGames, onBack }) => {
+const CATEGORIES = [
+  'เกมวางกลยุทธ์',
+  'เกมปาร์ตี้',
+  'เกมสวมบทบาท',
+  'เกมแนวเศรษฐศาสตร์',
+  'เกมปริศนา',
+];
+
+const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame, onUpdateGame, onDeleteGames, onResetData, onBack }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [isPopular, setIsPopular] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // State for selection and editing
@@ -33,6 +44,8 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
       setName(game.name);
       setDescription(game.description);
       setImageUrl(game.imageUrl);
+      setCategory(game.category || CATEGORIES[0]);
+      setIsPopular(game.isPopular || false);
       setEditingId(game.id);
       setError(null);
       // Scroll to top for better UX
@@ -55,13 +68,15 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
     setName('');
     setDescription('');
     setImageUrl('');
+    setCategory(CATEGORIES[0]);
+    setIsPopular(false);
     setEditingId(null);
     setError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description || !imageUrl) {
+    if (!name || !description || !imageUrl || !category) {
       setError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
       return;
     }
@@ -75,18 +90,46 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
           name,
           description,
           imageUrl,
+          category,
+          isPopular,
         });
         alert('แก้ไขบอร์ดเกมเรียบร้อย');
         handleCancelEdit();
         setSelectedIds([]);
       }
     } else {
-      onAddGame({ name, description, imageUrl });
+      onAddGame({ name, description, imageUrl, category, isPopular });
       // Reset form
       setName('');
       setDescription('');
       setImageUrl('');
+      setCategory(CATEGORIES[0]);
+      setIsPopular(false);
     }
+  };
+
+  const handleExportData = () => {
+    // Reset selection state for the export file so all start as unselected
+    const gamesForExport = boardGames.map(game => ({
+      ...game,
+      selected: false
+    }));
+
+    const fileContent = `import { BoardGame } from '../types';
+
+export const INITIAL_BOARD_GAMES: BoardGame[] = ${JSON.stringify(gamesForExport, null, 2)};`;
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'boardGames.ts';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('ดาวน์โหลดไฟล์ boardGames.ts แล้ว!\n\nให้นำไฟล์นี้ไปวางทับไฟล์เดิมที่ "data/boardGames.ts" ในโปรเจกต์ เพื่อให้ข้อมูลชุดนี้เป็นข้อมูลเริ่มต้นถาวร');
   };
 
   // Determine UI state
@@ -115,10 +158,39 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="เช่น Suphanat"
+                placeholder="เช่น Catan"
                 required
               />
             </div>
+            
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
+              <select
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                required
+              >
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isPopular"
+                checked={isPopular}
+                onChange={(e) => setIsPopular(e.target.checked)}
+                className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+              />
+              <label htmlFor="isPopular" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
+                เป็นเกมยอดนิยม (แสดงในหมวด "ยอดนิยม")
+              </label>
+            </div>
+
             <div>
               <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">คำอธิบาย</label>
               <textarea
@@ -166,7 +238,32 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
 
         {/* List Section */}
         <div className="bg-white p-8 rounded-xl shadow-lg">
-          <h2 className="text-3xl font-bold mb-6 text-gray-800">รายการบอร์ดเกมทั้งหมด</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">รายการทั้งหมด</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={onResetData}
+                className="flex items-center text-sm bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded border border-red-200 transition-colors"
+                title="รีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น"
+              >
+                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                รีเซ็ต
+              </button>
+              <button
+                onClick={handleExportData}
+                className="flex items-center text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded border border-indigo-200 transition-colors"
+                title="ดาวน์โหลดไฟล์ code สำหรับนำไปอัปเดต"
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Export
+              </button>
+            </div>
+          </div>
+
           <div className="max-h-[400px] overflow-y-auto pr-2 space-y-3 mb-4">
             {boardGames.slice().reverse().map(game => (
               <div 
@@ -177,7 +274,10 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
                   <img src={game.imageUrl} alt={game.name} className="w-12 h-12 object-cover rounded-md mr-4 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-700 truncate">{game.name}</p>
-                    <p className="text-sm text-gray-500 truncate">{game.description}</p>
+                    <div className="flex items-center text-xs text-gray-500 mt-1">
+                      <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full mr-2">{game.category || 'ไม่ระบุ'}</span>
+                      {game.isPopular && <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">ยอดนิยม</span>}
+                    </div>
                   </div>
                 </div>
                 <input 
