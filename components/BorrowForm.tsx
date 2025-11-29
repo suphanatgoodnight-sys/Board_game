@@ -70,7 +70,14 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
             type="text"
             id="studentId"
             value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow only numbers
+              if (/^\d*$/.test(val)) {
+                setStudentId(val);
+              }
+            }}
+            inputMode="numeric"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             placeholder="เช่น 10957"
             required
@@ -82,7 +89,14 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
             type="text"
             id="classroom"
             value={classroom}
-            onChange={(e) => setClassroom(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow only numbers
+              if (/^\d*$/.test(val)) {
+                setClassroom(val);
+              }
+            }}
+            inputMode="numeric"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             placeholder="เช่น 000"
             required
@@ -102,7 +116,7 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
           />
         </div>
         <div>
-          <label htmlFor="major" className="block text-sm font-medium text-gray-700 mb-1">สาขาห้องเรียน</label>
+          <label htmlFor="major" className="block text-sm font-medium text-gray-700 mb-1">สาขาวิชา</label>
           <select
             id="major"
             value={major}
@@ -129,3 +143,4 @@ const BorrowForm: React.FC<BorrowFormProps> = ({ selectedGames, onSuccess, onBac
 };
 
 export default BorrowForm;
+    

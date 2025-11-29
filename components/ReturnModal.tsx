@@ -151,7 +151,7 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ boardGames, onClose }) => {
                         ref={searchInputRef}
                         type="text"
                         className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="ค้นหาชื่อเกม..."
+                        placeholder="ค้นหารหัสบอร์ดเกม..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking input

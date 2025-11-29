@@ -3,7 +3,7 @@ import { BorrowerInfo } from '../types';
 
 // ใส่ URL ของ Apps Script ที่ deploy แล้ว
 const GOOGLE_SHEET_API_URL =
-  'https://script.google.com/macros/s/AKfycbyB14EN52PE0Fr0P0LfsxFHcbS6tZhp0n8246rzwAoQWKeB1VadIAr54dKessJeipquVg/exec';
+  'https://script.google.com/macros/s/AKfycby_BgOS0nvxRP1x3sjKDgic4jIez8_zZawKRA7kOQXGKp6ySzGhDI-pKg_kKexx6x3DJw/exec';
 
 interface ApiResponse {
   status: 'success' | 'not_found' | 'error';
@@ -112,7 +112,7 @@ export const recordReturn = async (studentId: string, gameName: string): Promise
  * function doPost(e) {
  *   const lock = LockService.getScriptLock();
  *   try {
- *     lock.waitLock(10000); // รอคิวสูงสุด 10 วินาที
+ *     lock.waitLock(10000);
  *   } catch (e) {
  *     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Server busy" })).setMimeType(ContentService.MimeType.JSON);
  *   }
@@ -122,35 +122,41 @@ export const recordReturn = async (studentId: string, gameName: string): Promise
  * 
  *     const data = JSON.parse(e.postData.contents);
  *     const ss = SpreadsheetApp.getActiveSpreadsheet();
- *     
- *     // ต้องตรวจสอบว่ามี Sheet จริงหรือไม่ เพื่อป้องกัน Error "Cannot read properties of null"
  *     const borrowSheet = ss.getSheetByName("BorrowData");
  *     const statusSheet = ss.getSheetByName("BoardGameStatus");
  * 
- *     if (!borrowSheet || !statusSheet) throw new Error("ไม่พบ Sheet: BorrowData หรือ BoardGameStatus กรุณาสร้าง Sheet ให้ครบ");
+ *     if (!borrowSheet || !statusSheet) throw new Error("ไม่พบ Sheet: BorrowData หรือ BoardGameStatus");
  * 
  *     const now = new Date();
  *     const monthNames = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
  *     const month = monthNames[now.getMonth()];
  *     const year = now.getFullYear();
  * 
- *     // 📘 1. กรณี: ยืมเกม (Borrow)
+ *     // เวลาเฉพาะ HH:mm:ss
+ *     const timeStr = Utilities.formatDate(now, "Asia/Bangkok", "HH:mm:ss");
+ * 
+ *     // 📘 BORROW
  *     if (data.action === "borrow") {
+ * 
  *       const newRow = [
- *         Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd HH:mm:ss"), // A
+ *         Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd HH:mm:ss"), // A: datetime เดิม
  *         data.Major || "",        // B
  *         data.Student_ID || "",   // C
  *         data.Classroom || "",    // D
  *         data.Board_Game || "",   // E
  *         data.Player_Count || "", // F
- *         "🟡 กำลังใช้งาน",        // G
+ *         "🟡 กำลังใช้งาน",        // G: สถานะ
  *         month,                   // H
- *         year                     // I
+ *         year,                    // I: ปี
+ *         timeStr,                 // J: Borrow_Time ใหม่
+ *         ""                       // K: Return_Time ใหม่
  *       ];
  * 
  *       borrowSheet.appendRow(newRow);
  * 
- *       // อัปเดตสถานะ
+ *       addPlayerCountToMonthlySummary(month, year, Number(data.Player_Count || 0));
+ * 
+ *       // อัปเดตสถานะ BoardGameStatus
  *       const games = statusSheet.getDataRange().getValues();
  *       let found = false;
  * 
@@ -178,7 +184,7 @@ export const recordReturn = async (studentId: string, gameName: string): Promise
  *       return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "บันทึกข้อมูลเรียบร้อย" })).setMimeType(ContentService.MimeType.JSON);
  *     }
  * 
- *     // 🔁 2. กรณี: คืนเกม (Return)
+ *     // 🔁 RETURN
  *     else if (data.action === "return") {
  *       const studentId = data.Student_ID;
  *       const gameName = data.Board_Game;
@@ -189,21 +195,27 @@ export const recordReturn = async (studentId: string, gameName: string): Promise
  *       let updated = false;
  * 
  *       for (let i = values.length - 1; i >= 1; i--) {
- *         if (values[i][2] == studentId && values[i][4] == gameName && values[i][6] === "🟡 กำลังใช้งาน") {
- *           borrowSheet.getRange(i + 1, 7).setValue("🟢 คืนแล้ว");
+ *         if (
+ *           values[i][2] == studentId &&   // C: Student_ID
+ *           values[i][4] == gameName &&    // E: Board_Game
+ *           values[i][6] === "🟡 กำลังใช้งาน" // G: สถานะ
+ *         ) {
+ *           borrowSheet.getRange(i + 1, 7).setValue("🟢 คืนแล้ว"); // สถานะ
+ *           borrowSheet.getRange(i + 1, 11).setValue(timeStr);     // K: Return_Time
  *           updated = true;
  *           break;
  *         }
  *       }
  * 
+ *       // เคลียร์สถานะ BoardGameStatus
  *       const statusValues = statusSheet.getDataRange().getValues();
  *       for (let i = 1; i < statusValues.length; i++) {
  *         if (statusValues[i][0] === gameName) {
- *            if (String(statusValues[i][3]) === String(studentId)) {
- *              statusSheet.getRange(i + 1, 2).setValue("🟢 พร้อมให้ยืม");
- *              statusSheet.getRange(i + 1, 3, 1, 3).clearContent();
- *            }
- *            break;
+ *           if (String(statusValues[i][3]) === String(studentId)) {
+ *             statusSheet.getRange(i + 1, 2).setValue("🟢 พร้อมให้ยืม");
+ *             statusSheet.getRange(i + 1, 3, 1, 3).clearContent();
+ *           }
+ *           break;
  *         }
  *       }
  * 
@@ -218,9 +230,41 @@ export const recordReturn = async (studentId: string, gameName: string): Promise
  *     }
  * 
  *   } catch (err) {
- *     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+ *     return ContentService.createTextOutput(JSON.stringify({
+ *       status: "error",
+ *       message: err.toString()
+ *     })).setMimeType(ContentService.MimeType.JSON);
  *   } finally {
  *     lock.releaseLock();
+ *   }
+ * }
+ * 
+ * 
+ * 
+ * // 📌 Monthly Summary
+ * function addPlayerCountToMonthlySummary(month, year, playerCount) {
+ *   const ss = SpreadsheetApp.getActive();
+ *   const summarySheet = ss.getSheetByName("Monthly Summary");
+ * 
+ *   if (!summarySheet) return;
+ * 
+ *   const lastRow = summarySheet.getLastRow();
+ *   const data = summarySheet.getRange(2, 1, lastRow - 1, 5).getValues();
+ * 
+ *   for (let i = 0; i < data.length; i++) {
+ *     const rowMonth = data[i][0];
+ *     const rowYear = data[i][4];
+ * 
+ *     if (rowMonth == month && Number(rowYear) == Number(year)) {
+ * 
+ *       let oldValue = data[i][1];
+ *       if (!oldValue || isNaN(oldValue)) oldValue = 0;
+ * 
+ *       const newValue = Number(oldValue) + Number(playerCount);
+ * 
+ *       summarySheet.getRange(i + 2, 2).setValue(newValue);
+ *       return;
+ *     }
  *   }
  * }
  */
