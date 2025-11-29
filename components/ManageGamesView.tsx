@@ -19,6 +19,44 @@ const CATEGORIES = [
   'เกมปริศนา',
 ];
 
+// Helper to resize and convert image to Base64
+const resizeImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800; // Limit width to 800px to save space
+        
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+       
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Convert to JPEG with 0.7 quality
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+        } else {
+            reject(new Error("Could not get canvas context"));
+        }
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame, onUpdateGame, onDeleteGames, onResetData, onBack }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -26,6 +64,9 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [isPopular, setIsPopular] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // State for image source type
+  const [imageSource, setImageSource] = useState<'url' | 'upload'>('url');
   
   // State for selection and editing
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -47,6 +88,14 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
       setCategory(game.category || CATEGORIES[0]);
       setIsPopular(game.isPopular || false);
       setEditingId(game.id);
+      
+      // Determine image source based on content
+      if (game.imageUrl.startsWith('data:')) {
+        setImageSource('upload');
+      } else {
+        setImageSource('url');
+      }
+      
       setError(null);
       // Scroll to top for better UX
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -70,14 +119,27 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
     setImageUrl('');
     setCategory(CATEGORIES[0]);
     setIsPopular(false);
+    setImageSource('url');
     setEditingId(null);
     setError(null);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      try {
+        const base64 = await resizeImage(e.target.files[0]);
+        setImageUrl(base64);
+      } catch (err) {
+        console.error('Error processing image:', err);
+        setError('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ');
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !description || !imageUrl || !category) {
-      setError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+      setError('กรุณากรอกข้อมูลให้ครบทุกช่อง และเลือกรูปภาพ');
       return;
     }
     setError(null);
@@ -105,6 +167,7 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
       setImageUrl('');
       setCategory(CATEGORIES[0]);
       setIsPopular(false);
+      setImageSource('url');
     }
   };
 
@@ -203,20 +266,71 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = ${JSON.stringify(gamesForExport,
                 required
               />
             </div>
+
+            {/* Image Selection Section */}
             <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">URL รูปภาพ</label>
-              <input
-                type="url"
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="https://example.com/image.jpg"
-                required
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">รูปภาพ</label>
+              
+              <div className="flex space-x-4 mb-3">
+                <label className="flex items-center cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="imageSource" 
+                    checked={imageSource === 'url'} 
+                    onChange={() => setImageSource('url')}
+                    className="mr-2 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">ใช้ URL</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="imageSource" 
+                    checked={imageSource === 'upload'} 
+                    onChange={() => setImageSource('upload')}
+                    className="mr-2 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">อัปโหลดจากเครื่อง</span>
+                </label>
+              </div>
+
+              {imageSource === 'url' ? (
+                <input
+                  type="url"
+                  value={!imageUrl.startsWith('data:') ? imageUrl : ''}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://example.com/image.jpg"
+                />
+              ) : (
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:bg-gray-50 transition-colors">
+                  <div className="space-y-1 text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div className="flex text-sm text-gray-600 justify-center">
+                      <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                        <span>เลือกไฟล์รูปภาพ</span>
+                        <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleFileChange} />
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Image Preview */}
+              {imageUrl && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-1">ตัวอย่างรูปภาพ:</p>
+                  <div className="relative h-32 w-full border border-gray-200 rounded-lg bg-gray-50 overflow-hidden flex items-center justify-center">
+                    <img src={imageUrl} alt="Preview" className="h-full object-contain" />
+                  </div>
+                </div>
+              )}
             </div>
             
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 pt-2">
               <button
                 type="submit"
                 className={`flex-1 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-opacity-50 ${editingId ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'}`}
@@ -271,7 +385,7 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = ${JSON.stringify(gamesForExport,
                 className={`flex items-center justify-between bg-gray-50 p-3 rounded-md border ${selectedIds.includes(game.id) ? 'border-blue-500 bg-blue-50' : 'border-transparent'}`}
               >
                 <div className="flex items-center overflow-hidden mr-2">
-                  <img src={game.imageUrl} alt={game.name} className="w-12 h-12 object-cover rounded-md mr-4 flex-shrink-0" />
+                  <img src={game.imageUrl} alt={game.name} className="w-12 h-12 object-cover rounded-md mr-4 flex-shrink-0 bg-gray-200" />
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-700 truncate">{game.name}</p>
                     <div className="flex items-center text-xs text-gray-500 mt-1">
