@@ -6,20 +6,19 @@ import Header from './components/Header';
 import BoardGameList from './components/BoardGameList';
 import ConfirmationModal from './components/ConfirmationModal';
 import BorrowForm from './components/BorrowForm';
-import ReturnModal from './components/ReturnModal';
 import ManageGamesView from './components/ManageGamesView';
 import SearchView from './components/SearchView';
+import ReturnHistoryView from './components/ReturnHistoryView';
+import TransactionHistoryView from './components/TransactionHistoryView';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.List);
   
-  // Initialize state from localStorage if available, otherwise use default data
   const [boardGames, setBoardGames] = useState<BoardGame[]>(() => {
     try {
       const savedGames = localStorage.getItem('boardGames');
       if (savedGames) {
         const parsed: any[] = JSON.parse(savedGames);
-        // Migration for old data: Add default category and isPopular if missing
         return parsed.map(game => ({
           ...game,
           category: game.category || 'เกมวางกลยุทธ์',
@@ -34,9 +33,7 @@ const App: React.FC = () => {
   });
 
   const [isConfirmationModalOpen, setConfirmationModalOpen] = useState(false);
-  const [isReturnModalOpen, setReturnModalOpen] = useState(false);
 
-  // Save to localStorage whenever boardGames changes
   useEffect(() => {
     localStorage.setItem('boardGames', JSON.stringify(boardGames));
   }, [boardGames]);
@@ -66,7 +63,6 @@ const App: React.FC = () => {
 
   const handleBorrowSuccess = () => {
     setView(View.BorrowSuccess);
-    // Reset selections after borrowing
     setBoardGames(prevGames =>
       prevGames.map(game => ({ ...game, selected: false }))
     );
@@ -92,9 +88,9 @@ const App: React.FC = () => {
   };
 
   const handleResetData = () => {
-    if (window.confirm('คุณต้องการรีเซ็ตข้อมูลบอร์ดเกมทั้งหมดให้กลับเป็นค่าเริ่มต้นตามไฟล์ระบบใช่หรือไม่? ข้อมูลที่คุณเพิ่มเองจะหายไป')) {
+    if (window.confirm('คุณต้องการรีเซ็ตข้อมูลบอร์ดเกมทั้งหมดให้กลับเป็นค่าเริ่มต้น?')) {
       setBoardGames(INITIAL_BOARD_GAMES);
-      localStorage.removeItem('boardGames'); // Optional: clear storage directly to ensure clean slate
+      localStorage.removeItem('boardGames');
     }
   };
 
@@ -114,21 +110,23 @@ const App: React.FC = () => {
             onBack={handleBackToList}
           />
         );
+      case View.ReturnList:
+        return <ReturnHistoryView boardGames={boardGames} onBack={handleBackToList} />;
+      case View.TransactionHistory:
+        return <TransactionHistoryView onBack={handleBackToList} />;
       case View.BorrowForm:
         return <BorrowForm selectedGames={selectedGames} onSuccess={handleBorrowSuccess} onBack={handleBackToList} />;
       case View.BorrowSuccess:
         return (
-          <div className="flex flex-col items-center justify-center text-center p-8 bg-white shadow-lg rounded-xl max-w-lg mx-auto mt-10">
-            <svg className="w-16 h-16 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">ยืมบอร์ดเกมสำเร็จ!</h2>
-            <p className="text-gray-600 mb-6">กรุณาคืนบอร์ดเกมตามขั้นตอนดังนี้:</p>
-            <div className="text-left bg-gray-100 p-4 rounded-lg border border-gray-200">
-              <p className="mb-2">1. ไปที่หน้าเลือกบอร์ดเกม</p>
-              <p>2. กดปุ่ม "คืนบอร์ดเกม" และใส่เลขประจำตัวของนักศึกษา</p>
+          <div className="flex flex-col items-center justify-center text-center p-12 bg-white shadow-2xl rounded-[40px] max-w-lg mx-auto mt-20 animate-scale-in">
+            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-8">
+              <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
+            <h2 className="text-4xl font-black text-slate-800 mb-3">สำเร็จ!</h2>
+            <p className="text-slate-500 mb-10 text-lg">ข้อมูลการยืมของท่านถูกบันทึกลงในระบบแล้ว</p>
             <button
               onClick={handleBackToList}
-              className="mt-8 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              className="w-full bg-blue-600 text-white font-black py-5 px-8 rounded-2xl hover:bg-blue-700 transition duration-300 shadow-xl shadow-blue-500/20 transform hover:-translate-y-1"
             >
               กลับไปหน้าหลัก
             </button>
@@ -159,11 +157,12 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans text-gray-800">
+    <div className="bg-[#f8fafc] min-h-screen font-sans text-slate-800 pb-20">
       <Header 
-        onReturnClick={() => setReturnModalOpen(true)} 
+        onReturnClick={() => setView(View.ReturnList)} 
         onManageClick={() => setView(View.ManageGames)}
         onSearchClick={() => setView(View.Search)}
+        onHistoryClick={() => setView(View.TransactionHistory)}
       />
       <main className="container mx-auto px-4 py-8">
         {renderContent()}
@@ -174,13 +173,6 @@ const App: React.FC = () => {
           selectedGames={selectedGames}
           onClose={() => setConfirmationModalOpen(false)}
           onConfirm={handleProceedToBorrow}
-        />
-      )}
-
-      {isReturnModalOpen && (
-        <ReturnModal
-          boardGames={boardGames}
-          onClose={() => setReturnModalOpen(false)}
         />
       )}
     </div>

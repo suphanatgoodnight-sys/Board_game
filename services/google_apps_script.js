@@ -1,0 +1,177 @@
+
+/**
+ * --- FINAL GOOGLE APPS SCRIPT (STRICT MATCHING) ---
+ */
+
+function doGet(e) {
+  try {
+    const action = e.parameter.action;
+    if (action === "get_borrowed") return getAllBorrowed();
+    if (action === "get_all_transactions") return getAllTransactions();
+    if (action === "check") return checkSingleGame(e.parameter.Board_Game);
+    throw new Error("Invalid action");
+  } catch (err) {
+    return output({ status: "error", message: err.toString() });
+  }
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); }
+  catch (e) { return output({ status: "error", message: "Server busy" }); }
+  try {
+    const data = JSON.parse(e.postData.contents);
+    if (data.action === "borrow") return handleBorrow(data);
+    if (data.action === "return") return handleReturn(data);
+    throw new Error("Action ไม่ถูกต้อง");
+  } catch (err) {
+    return output({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getAllBorrowed() {
+  const ss = SpreadsheetApp.getActive();
+  const statusSheet = ss.getSheetByName("BoardGameStatus");
+  if (!statusSheet) return output({ status: "error", message: "ไม่พบชีต BoardGameStatus" });
+
+  const values = statusSheet.getDataRange().getValues();
+  const items = [];
+  for (let i = 1; i < values.length; i++) {
+    const status = String(values[i][1]);
+    if (status.includes("กำลัง")) {
+      items.push({
+        gameName: values[i][0],
+        status: status,
+        major: values[i][2] || "",
+        studentId: String(values[i][3]).trim(), // บังคับเป็น String และตัดช่องว่าง
+        classroom: values[i][4] || "",
+        borrowTimestamp: values[i][5] || null
+      });
+    }
+  }
+  return output({ status: "success", items: items });
+}
+
+function handleBorrow(data) {
+  const ss = SpreadsheetApp.getActive();
+  const borrowSheet = ss.getSheetByName("BorrowData");
+  const statusSheet = ss.getSheetByName("BoardGameStatus");
+  const statusValues = statusSheet.getDataRange().getValues();
+  
+  const gameName = data.Board_Game;
+  const studentId = String(data.Student_ID).trim();
+
+  for (let i = 1; i < statusValues.length; i++) {
+    if (statusValues[i][0] === gameName && String(statusValues[i][1]).includes("กำลัง")) {
+      return output({ status: "blocked", message: "เกมนี้ถูกยืมอยู่แล้ว" });
+    }
+  }
+
+  const now = new Date();
+  const dateStr = Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd HH:mm:ss");
+  const isoStr = now.toISOString();
+  
+  const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+  const monthName = thaiMonths[now.getMonth()];
+  const yearAD = now.getFullYear().toString();
+  const borrowTime = Utilities.formatDate(now, "Asia/Bangkok", "HH:mm:ss");
+
+  borrowSheet.appendRow([
+    data.Player_Count, dateStr, data.Classroom, studentId, data.Major, 
+    gameName, monthName, yearAD, borrowTime, ""
+  ]);
+
+  let found = false;
+  for (let i = 1; i < statusValues.length; i++) {
+    if (statusValues[i][0] === gameName) {
+      statusSheet.getRange(i + 1, 2, 1, 5).setValues([["🟡 กำลังใช้งาน", data.Major, studentId, data.Classroom, isoStr]]);
+      found = true;
+      break;
+    }
+  }
+  if (!found) statusSheet.appendRow([gameName, "🟡 กำลังใช้งาน", data.Major, studentId, data.Classroom, isoStr]);
+  
+  return output({ status: "success", message: "บันทึกข้อมูลสำเร็จ" });
+}
+
+function handleReturn(data) {
+  const ss = SpreadsheetApp.getActive();
+  const borrowSheet = ss.getSheetByName("BorrowData");
+  const statusSheet = ss.getSheetByName("BoardGameStatus");
+  
+  // แปลงค่าเป็น String และตัดช่องว่างเพื่อป้องกันการเปรียบเทียบพลาด
+  const studentId = String(data.Student_ID).trim();
+  const gameName = String(data.Board_Game).trim();
+  const timeStr = Utilities.formatDate(new Date(), "Asia/Bangkok", "HH:mm:ss");
+
+  const values = borrowSheet.getDataRange().getValues();
+  let updatedInBorrowData = false;
+  
+  // 1. อัปเดตเวลาคืนใน BorrowData (ค้นหาแถวที่ตรงกันและยังไม่มีเวลาคืน)
+  for (let i = values.length - 1; i >= 1; i--) {
+    const rowId = String(values[i][3]).trim();
+    const rowGame = String(values[i][5]).trim();
+    const returnTime = values[i][9];
+
+    if (rowId === studentId && rowGame === gameName && !returnTime) {
+      borrowSheet.getRange(i + 1, 10).setValue(timeStr);
+      updatedInBorrowData = true;
+      break;
+    }
+  }
+
+  // 2. อัปเดตสถานะใน BoardGameStatus ให้กลับเป็น "พร้อมให้ยืม"
+  const statusValues = statusSheet.getDataRange().getValues();
+  let updatedInStatus = false;
+  for (let i = 1; i < statusValues.length; i++) {
+    const rowGame = String(statusValues[i][0]).trim();
+    const rowId = String(statusValues[i][3]).trim();
+    
+    if (rowGame === gameName && rowId === studentId) {
+      statusSheet.getRange(i + 1, 2, 1, 5).setValues([["🟢 พร้อมให้ยืม", "", "", "", ""]]);
+      updatedInStatus = true;
+      break;
+    }
+  }
+  
+  // ส่งผลลัพธ์กลับ: ปรับข้อความ Error ให้เป็น "รหัสประจำตัวไม่ถูกต้อง" ตามความต้องการ
+  if (updatedInBorrowData || updatedInStatus) {
+    return output({ status: "success", message: "คุณคืนบอร์ดเกมแล้ว" });
+  } else {
+    return output({ status: "not_found", message: "รหัสประจำตัวไม่ถูกต้อง" });
+  }
+}
+
+function getAllTransactions() {
+  const ss = SpreadsheetApp.getActive();
+  const borrowSheet = ss.getSheetByName("BorrowData");
+  const values = borrowSheet.getDataRange().getValues();
+  const transactions = [];
+  for (let i = values.length - 1; i >= 1; i--) {
+    transactions.push({
+      playerCount: values[i][0], date: values[i][1], classroom: values[i][2],
+      studentId: values[i][3], major: values[i][4], gameName: values[i][5],
+      borrowTime: values[i][8], returnTime: values[i][9] || null
+    });
+  }
+  return output({ status: "success", items: transactions });
+}
+
+function checkSingleGame(gameName) {
+  const ss = SpreadsheetApp.getActive();
+  const statusSheet = ss.getSheetByName("BoardGameStatus");
+  const values = statusSheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0] === gameName) {
+      if (String(values[i][1]).includes("กำลัง")) return output({ status: "borrowed", boardGame: gameName, major: values[i][2], studentId: values[i][3], classroom: values[i][4] });
+      return output({ status: "available", boardGame: gameName });
+    }
+  }
+  return output({ status: "not_found" });
+}
+
+function output(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
