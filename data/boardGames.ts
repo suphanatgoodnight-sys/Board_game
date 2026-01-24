@@ -1,4 +1,4 @@
-import { BoardGame } from '@/types';
+import { BoardGame } from '../types';
 
 export const INITIAL_BOARD_GAMES: BoardGame[] = [
   {
@@ -8,7 +8,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมสวมบทบาท",
     "isPopular": true,
     "id": 1,
-    "selected": false
+    "selected": false,
+    "barcode": "049"
   },
   {
     "name": "Spyfall",
@@ -17,7 +18,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมสวมบทบาท",
     "isPopular": true,
     "id": 2,
-    "selected": false
+    "selected": false,
+    "barcode": "048"
   },
   {
     "name": "CS Files",
@@ -26,7 +28,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมสวมบทบาท",
     "isPopular": true,
     "id": 3,
-    "selected": false
+    "selected": false,
+    "barcode": "047"
   },
   {
     "name": "คำต้องห้าม(ปาร์ตี้)",
@@ -35,7 +38,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": true,
     "id": 4,
-    "selected": false
+    "selected": false,
+    "barcode": "046"
   },
   {
     "name": "โต้ดเนมส์",
@@ -44,7 +48,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": true,
     "id": 5,
-    "selected": false
+    "selected": false,
+    "barcode": "045"
   },
   {
     "name": "Checkers",
@@ -53,7 +58,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 6,
-    "selected": false
+    "selected": false,
+    "barcode": "044"
   },
   {
     "name": "Chess",
@@ -62,7 +68,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 7,
-    "selected": false
+    "selected": false,
+    "barcode": "043"
   },
   {
     "name": "snake & ladders",
@@ -71,7 +78,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 8,
-    "selected": false
+    "selected": false,
+    "barcode": "042"
   },
   {
     "name": "คำต้องห้าม(ออฟฟิศ)",
@@ -80,7 +88,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 9,
-    "selected": false
+    "selected": false,
+    "barcode": "041"
   },
   {
     "name": "คำต้องห้าม(จีบ)",
@@ -89,7 +98,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 10,
-    "selected": false
+    "selected": false,
+    "barcode": "040"
   },
   {
     "name": "เขาคือใคร(ในสรรพสัตว์)",
@@ -98,7 +108,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 11,
-    "selected": false
+    "selected": false,
+    "barcode": "039"
   },
   {
     "name": "เขาคือใคร(นิทาน)",
@@ -107,7 +118,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 12,
-    "selected": false
+    "selected": false,
+    "barcode": "038"
   },
   {
     "name": "อีนี้ของใคร?",
@@ -116,7 +128,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 13,
-    "selected": false
+    "selected": false,
+    "barcode": "037"
   },
   {
     "name": "เขาคือใคร(LORD OF THE RING)",
@@ -125,7 +138,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 14,
-    "selected": false
+    "selected": false,
+    "barcode": "036"
   },
   {
     "name": "UNO REMIX",
@@ -134,7 +148,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 15,
-    "selected": false
+    "selected": false,
+    "barcode": "035"
   },
   {
     "name": "เกมแม่เหล็ก โอ-เอ็กซ์ & เกมเรียงสี่",
@@ -143,7 +158,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 16,
-    "selected": false
+    "selected": false,
+    "barcode": "034"
   },
   {
     "name": "แบนดิโด",
@@ -152,7 +168,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมสวมบทบาท",
     "isPopular": false,
     "id": 17,
-    "selected": false
+    "selected": false,
+    "barcode": "033"
   },
   {
     "name": "BlackStodies",
@@ -161,7 +178,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปริศนา",
     "isPopular": false,
     "id": 18,
-    "selected": false
+    "selected": false,
+    "barcode": "032"
   },
   {
     "name": "Skull",
@@ -170,7 +188,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 19,
-    "selected": false
+    "selected": false,
+    "barcode": "031"
   },
   {
     "name": "สงครามชนแก้ว",
@@ -179,7 +198,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 20,
-    "selected": false
+    "selected": false,
+    "barcode": "030"
   },
   {
     "name": "เหมียว code",
@@ -188,7 +208,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 21,
-    "selected": false
+    "selected": false,
+    "barcode": "029"
   },
   {
     "name": "ศึกสร้างเมือง",
@@ -197,7 +218,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 22,
-    "selected": false
+    "selected": false,
+    "barcode": "028"
   },
   {
     "name": "oriflamme",
@@ -206,7 +228,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมแนวเศรษฐศาสตร์",
     "isPopular": false,
     "id": 23,
-    "selected": false
+    "selected": false,
+    "barcode": "027"
   },
   {
     "name": "เกม๑คืนปริศนาเกมล่ามนุษย์หมาป่ารุ่งอรุณ",
@@ -215,7 +238,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 24,
-    "selected": false
+    "selected": false,
+    "barcode": "026"
   },
   {
     "name": "1คืนปริศนา เกมล่ามนุษย์หมาป่า",
@@ -224,7 +248,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 25,
-    "selected": false
+    "selected": false,
+    "barcode": "025"
   },
   {
     "name": " เกมล่าปริศนามนุษย์หมาป่า รวมภาคเสริมฉบับสมบูรณ์",
@@ -233,7 +258,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 26,
-    "selected": false
+    "selected": false,
+    "barcode": "024"
   },
   {
     "name": "ไพ่ลามะทิเบต",
@@ -242,7 +268,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 27,
-    "selected": false
+    "selected": false,
+    "barcode": "023"
   },
   {
     "name": "ชา2ถ้วยในดินแดนมหัศจรรย์",
@@ -251,7 +278,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 28,
-    "selected": false
+    "selected": false,
+    "barcode": "022"
   },
   {
     "name": "คาเมลอัพ",
@@ -260,7 +288,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมแนวเศรษฐศาสตร์",
     "isPopular": false,
     "id": 29,
-    "selected": false
+    "selected": false,
+    "barcode": "021"
   },
   {
     "name": "28 day",
@@ -269,7 +298,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 30,
-    "selected": false
+    "selected": false,
+    "barcode": "020"
   },
   {
     "name": "27 Metres",
@@ -278,7 +308,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 31,
-    "selected": false
+    "selected": false,
+    "barcode": "019"
   },
   {
     "name": "29 DEGREES",
@@ -287,7 +318,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 32,
-    "selected": false
+    "selected": false,
+    "barcode": "018"
   },
   {
     "name": "CS Files: Undercover Allies",
@@ -296,7 +328,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": true,
     "id": 33,
-    "selected": false
+    "selected": false,
+    "barcode": "017"
   },
   {
     "name": "SLOT MACHINE",
@@ -305,7 +338,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 34,
-    "selected": false
+    "selected": false,
+    "barcode": "016"
   },
   {
     "name": "IS IT THAI DISHES",
@@ -314,7 +348,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 35,
-    "selected": false
+    "selected": false,
+    "barcode": "015"
   },
   {
     "name": "โยคี",
@@ -323,7 +358,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": true,
     "id": 36,
-    "selected": false
+    "selected": false,
+    "barcode": "014"
   },
   {
     "name": "โรงแรมสีเลือด",
@@ -332,7 +368,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปริศนา",
     "isPopular": false,
     "id": 37,
-    "selected": false
+    "selected": false,
+    "barcode": "013"
   },
   {
     "name": "Rummikub",
@@ -341,7 +378,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 38,
-    "selected": false
+    "selected": false,
+    "barcode": "012"
   },
   {
     "name": "Dekalko",
@@ -350,7 +388,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 39,
-    "selected": false
+    "selected": false,
+    "barcode": "011"
   },
   {
     "name": "Ticket to Ride New York (เกมต่อรถตะลุย New York)",
@@ -359,7 +398,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 40,
-    "selected": false
+    "selected": false,
+    "barcode": "010"
   },
   {
     "name": "Detective Club",
@@ -368,7 +408,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": true,
     "id": 41,
-    "selected": false
+    "selected": false,
+    "barcode": "009"
   },
   {
     "name": "spyfall 2",
@@ -377,7 +418,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": true,
     "id": 42,
-    "selected": false
+    "selected": false,
+    "barcode": "008"
   },
   {
     "name": "Harry Potter: House Cup Competition",
@@ -386,7 +428,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 43,
-    "selected": false
+    "selected": false,
+    "barcode": "007"
   },
   {
     "name": "MONOLYTH ศิลาพยากรณ์",
@@ -395,7 +438,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 44,
-    "selected": false
+    "selected": false,
+    "barcode": "006"
   },
   {
     "name": "The Night Cage ฝ่าวงกตมรณะ",
@@ -404,7 +448,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปริศนา",
     "isPopular": false,
     "id": 45,
-    "selected": false
+    "selected": false,
+    "barcode": "005"
   },
   {
     "name": "Azul",
@@ -413,7 +458,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 46,
-    "selected": false
+    "selected": false,
+    "barcode": "004"
   },
   {
     "name": "ผู้ตรวจการแห่งนอตทิงแฮม",
@@ -422,7 +468,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมวางกลยุทธ์",
     "isPopular": false,
     "id": 47,
-    "selected": false
+    "selected": false,
+    "barcode": "003"
   },
   {
     "name": "ต๊อก ต๊อก คนตัดไม้",
@@ -431,7 +478,8 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 48,
-    "selected": false
+    "selected": false,
+    "barcode": "002"
   },
   {
     "name": "มุกตลก ฮาศาสตร์",
@@ -440,6 +488,7 @@ export const INITIAL_BOARD_GAMES: BoardGame[] = [
     "category": "เกมปาร์ตี้",
     "isPopular": false,
     "id": 49,
-    "selected": false
+    "selected": false,
+    "barcode": "001"
   }
-];
+]

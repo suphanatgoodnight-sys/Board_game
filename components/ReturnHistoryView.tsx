@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BoardGame } from '../types';
 import { recordReturn, fetchBorrowedItems } from '../services/googleSheetService';
 
@@ -26,6 +26,10 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
+  
+  // State สำหรับรับค่าจากเครื่องสแกน (Local Scanner)
+  const [scanBuffer, setScanBuffer] = useState('');
+  const scannerInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -49,7 +53,54 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
     loadData();
   }, [loadData]);
 
+  // จัดการการ Focus ของเครื่องสแกนเพื่อให้พิมพ์ติดเสมอ
+  useEffect(() => {
+    const focusScanner = () => {
+      if (!isConfirmingReturn && !showSuccess && scannerInputRef.current) {
+        scannerInputRef.current.focus();
+      }
+    };
+
+    focusScanner();
+    const interval = setInterval(focusScanner, 1000);
+    return () => clearInterval(interval);
+  }, [isConfirmingReturn, showSuccess]);
+
+  const handleScan = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const gameName = scanBuffer.trim();
+      if (!gameName) return;
+
+      // ค้นหาเกมในรายการที่ยืมเพื่อหา Student ID มาคืนอัตโนมัติ
+      const match = borrowedItems.find(item => 
+        item.gameName.toLowerCase() === gameName.toLowerCase()
+      );
+
+      if (match) {
+        // ทำเรื่องคืนอัตโนมัติทันที (Auto-Return)
+        setReturnError(null);
+        setIsSubmitting(true);
+        try {
+          const result = await recordReturn(match.studentId, match.gameName);
+          if (result.success) {
+            setShowSuccess(true);
+          } else {
+            setReturnError(result.message || 'เกิดข้อผิดพลาดในการคืน');
+          }
+        } catch (err) {
+          setReturnError('การเชื่อมต่อขัดข้อง');
+        } finally {
+          setIsSubmitting(false);
+        }
+      } else {
+        setReturnError(`ไม่พบรายการยืมสำหรับเกม: "${gameName}" (อาจจะยังไม่ถูกยืม)`);
+      }
+      setScanBuffer('');
+    }
+  };
+
   const handleManualReturn = async () => {
+    // ฟังก์ชันนี้จะเรียกใช้งานเมื่อผู้ใช้คลิกปุ่มคืนบนการ์ดเกมเอง (แมนนวล)
     if (!isConfirmingReturn) return;
     
     const inputId = studentIdInput.trim();
@@ -74,10 +125,10 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
         setStudentIdInput('');
         setShowSuccess(true);
       } else {
-        setReturnError(result.message || 'รหัสประจำตัวไม่ถูกต้อง');
+        setReturnError(result.message || 'เกิดข้อผิดพลาด');
       }
     } catch (error) {
-      setReturnError('การเชื่อมต่อขัดข้อง กรุณาลองใหม่อีกครั้ง');
+      setReturnError('การเชื่อมต่อขัดข้อง');
     } finally {
       setIsSubmitting(false);
     }
@@ -92,7 +143,7 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
           <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
         </div>
         <h2 className="text-4xl font-black text-slate-800 mb-3">สำเร็จ!</h2>
-        <p className="text-blue-600 font-bold text-xl mb-10">คุณคืนบอร์ดเกมแล้ว</p>
+        <p className="text-blue-600 font-bold text-xl mb-10">ระบบบันทึกการคืนเรียบร้อยแล้ว</p>
         <div className="flex flex-col gap-3 w-full">
           <button 
             onClick={() => { setShowSuccess(false); loadData(); }} 
@@ -113,7 +164,27 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in relative">
-      {/* Top Error Alert Bar */}
+      {/* Hidden input สำหรับดักจับค่าจากเครื่องสแกน */}
+      <input
+        ref={scannerInputRef}
+        type="text"
+        className="absolute opacity-0 pointer-events-none"
+        value={scanBuffer}
+        onChange={(e) => setScanBuffer(e.target.value)}
+        onKeyDown={handleScan}
+      />
+
+      {/* Loading Overlay ขณะคืนอัตโนมัติ */}
+      {isSubmitting && !isConfirmingReturn && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[200] flex items-center justify-center">
+            <div className="bg-white p-8 rounded-[32px] shadow-2xl flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-black text-slate-800 text-lg">กำลังทำรายการคืนอัตโนมัติ...</span>
+            </div>
+        </div>
+      )}
+
+      {/* Error Alert Bar */}
       {returnError && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[110] w-[90%] max-w-xl animate-bounce-short">
           <div className="bg-red-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center justify-between border-2 border-white/20 backdrop-blur-md">
@@ -128,16 +199,24 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-12">
-        <button onClick={onBack} className="text-slate-500 hover:text-blue-600 flex items-center font-bold">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
+        <button onClick={onBack} className="text-slate-500 hover:text-blue-600 flex items-center font-bold self-start md:self-center">
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           กลับหน้าหลัก
         </button>
+        
         <div className="text-center flex-1">
           <h2 className="text-3xl md:text-4xl font-black text-slate-800">รายการบอร์ดเกมที่กำลังยืม</h2>
-          <p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-widest">คลิกปุ่มคืนเกมเมื่อเล่นเสร็จสิ้น</p>
+          <div className="inline-flex items-center gap-2 mt-2 px-4 py-1.5 bg-blue-50 rounded-full border border-blue-100">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+            </span>
+            <p className="text-blue-600 font-black text-xs uppercase tracking-widest">Scanner Active: ยิง QR เพื่อคืนอัตโนมัติ</p>
+          </div>
         </div>
-        <button onClick={loadData} disabled={isLoading} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-all disabled:opacity-50">
+
+        <button onClick={loadData} disabled={isLoading} className="p-3 text-blue-600 hover:bg-blue-50 rounded-full transition-all disabled:opacity-50">
           <svg className={`w-6 h-6 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         </button>
       </div>
@@ -191,11 +270,15 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
         </div>
       )}
 
+      {/* Manual Return Modal (สำหรับกรณีคลิกปุ่มคืนเอง) */}
       {isConfirmingReturn && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className={`bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl border-4 ${returnError ? 'border-red-500 animate-shake' : 'border-blue-500'} transition-colors animate-scale-in`}>
-            <h3 className="text-2xl font-black text-slate-800 mb-2">ยืนยันการคืน</h3>
-            <p className="text-slate-500 text-sm mb-6 font-bold text-center">กรุณากรอกรหัสนักศึกษา 5 หลักของผู้ยืมเพื่อยืนยัน</p>
+          <div className={`bg-white rounded-[32px] p-8 w-full max-w-sm mx-auto shadow-2xl border-4 ${returnError ? 'border-red-500 animate-shake' : 'border-blue-500'} transition-colors animate-scale-in`}>
+            <div className="flex justify-center mb-4">
+              <img src={getGameImage(isConfirmingReturn.gameName)} alt="" className="w-20 h-20 object-cover rounded-xl shadow-md border-2 border-white" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-800 mb-1 text-center">คืนเกม: {isConfirmingReturn.gameName}</h3>
+            <p className="text-slate-500 text-sm mb-6 font-bold text-center">กรุณากรอกรหัสนักศึกษา 5 หลักของผู้ยืม ({isConfirmingReturn.studentId}) เพื่อยืนยัน</p>
             <input
               autoFocus
               type="text"
@@ -213,7 +296,7 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
               className={`w-full px-6 py-4 bg-slate-100 border-none rounded-2xl focus:ring-2 outline-none font-black text-center text-xl mb-6 shadow-inner transition-all ${returnError ? 'ring-red-500 ring-2 bg-red-50' : 'focus:ring-blue-500'}`}
             />
             <div className="flex gap-4">
-              <button onClick={() => {setIsConfirmingReturn(null); setStudentIdInput(''); setReturnError(null);}} className="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors">ยกเลิก</button>
+              <button onClick={() => { setIsConfirmingReturn(null); setStudentIdInput(''); setReturnError(null); }} className="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors">ยกเลิก</button>
               <button 
                 disabled={isSubmitting || studentIdInput.length !== 5}
                 onClick={handleManualReturn}
@@ -226,7 +309,6 @@ const ReturnHistoryView: React.FC<ReturnHistoryViewProps> = ({ boardGames, onBac
         </div>
       )}
 
-      {/* Tailwind Style Extension for short animations */}
       <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
