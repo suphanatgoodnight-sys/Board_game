@@ -9,6 +9,7 @@ interface BoardGameListProps {
   selectedCount: number;
   onToggleSelect: (id: number) => void;
   onConfirm: () => void;
+  theme: any;
 }
 
 const CATEGORIES = [
@@ -21,7 +22,7 @@ const CATEGORIES = [
   'เกมปริศนา',
 ];
 
-const BoardGameList: React.FC<BoardGameListProps> = ({ boardGames, selectedCount, onToggleSelect, onConfirm }) => {
+const BoardGameList: React.FC<BoardGameListProps> = ({ boardGames, selectedCount, onToggleSelect, onConfirm, theme }) => {
   const [activeCategory, setActiveCategory] = useState('ทั้งหมด');
 
   const popularGames = boardGames.filter(game => game.isPopular);
@@ -32,16 +33,19 @@ const BoardGameList: React.FC<BoardGameListProps> = ({ boardGames, selectedCount
     return game.category === activeCategory;
   });
 
+  const activeBtnClass = `bg-${theme.primary}-600 text-white border-${theme.primary}-600 shadow-${theme.primary}-200 scale-105`;
+  const inactiveBtnClass = `bg-white text-slate-600 border-slate-200 hover:border-${theme.primary}-400 hover:text-${theme.primary}-500`;
+
   return (
-    <div className="max-w-7xl mx-auto px-4">
+    <div className="max-w-7xl mx-auto px-4 animate-slide-up">
       {/* Highlight Section (Carousel) */}
       {activeCategory === 'ทั้งหมด' && popularGames.length > 0 && (
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
+            <div className={`w-2 h-8 bg-${theme.primary}-600 rounded-full transition-colors duration-1000`}></div>
             <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">บอร์ดเกมแนะนำ</h2>
           </div>
-          <GameCarousel popularGames={popularGames} onToggleSelect={onToggleSelect} />
+          <GameCarousel theme={theme} popularGames={popularGames} onToggleSelect={onToggleSelect} />
         </section>
       )}
 
@@ -59,9 +63,7 @@ const BoardGameList: React.FC<BoardGameListProps> = ({ boardGames, selectedCount
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border shadow-sm ${
-                  activeCategory === category
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200 scale-105'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-500'
+                  activeCategory === category ? activeBtnClass : inactiveBtnClass
                 }`}
               >
                 {category}
@@ -78,6 +80,7 @@ const BoardGameList: React.FC<BoardGameListProps> = ({ boardGames, selectedCount
                 key={game.id}
                 game={game}
                 onToggleSelect={onToggleSelect}
+                theme={theme}
               />
             ))
           ) : (
@@ -88,23 +91,6 @@ const BoardGameList: React.FC<BoardGameListProps> = ({ boardGames, selectedCount
           )}
         </div>
       </section>
-
-      {/* Floating Selection Bar */}
-      {selectedCount > 0 && (
-        <footer className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-slate-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-3xl z-50 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center justify-between px-8">
-          <div className="flex flex-col">
-            <span className="text-blue-400 text-xs font-bold uppercase tracking-widest">Selected Games</span>
-            <span className="text-white font-black text-lg">{selectedCount} รายการ</span>
-          </div>
-          <button
-            onClick={onConfirm}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-10 rounded-2xl transition-all shadow-lg shadow-blue-500/30 transform hover:scale-105 active:scale-95 flex items-center gap-3"
-          >
-            <span>ยืนยันรายการ</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-          </button>
-        </footer>
-      )}
     </div>
   );
 };

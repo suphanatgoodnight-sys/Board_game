@@ -9,11 +9,13 @@ interface ManageGamesViewProps {
   onDeleteGames: (ids: number[]) => void;
   onResetData: () => void;
   onBack: () => void;
+  // Added theme prop to fix TypeScript error
+  theme?: any;
 }
 
 const CATEGORIES = ['เกมวางกลยุทธ์', 'เกมปาร์ตี้', 'เกมสวมบทบาท', 'เกมแนวเศรษฐศาสตร์', 'เกมปริศนา'];
 
-const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame, onUpdateGame, onDeleteGames, onResetData, onBack }) => {
+const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame, onUpdateGame, onDeleteGames, onResetData, onBack, theme }) => {
   const [name, setName] = useState('');
   const [barcode, setBarcode] = useState('');
   const [description, setDescription] = useState('');
@@ -25,8 +27,8 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
   const [editingId, setEditingId] = useState<number | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const primaryColor = theme?.primary || 'blue';
 
-  // ฟังก์ชันดาวน์โหลดไฟล์ข้อมูล
   const handleExportData = () => {
     const dataStr = JSON.stringify(boardGames, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -103,8 +105,11 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <button onClick={onBack} className="text-blue-600 font-bold hover:underline mb-6 inline-block">&larr; กลับไปหน้าหลัก</button>
+    <div className="max-w-4xl mx-auto animate-slide-up">
+      <button onClick={onBack} className={`text-slate-400 font-bold hover:text-${primaryColor}-600 mb-6 inline-flex items-center transition-colors`}>
+        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        กลับไปหน้าหลัก
+      </button>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* ฟอร์มเพิ่ม/แก้ไข */}
@@ -116,12 +121,12 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
             
             <div>
               <label className="block text-sm font-bold mb-1 text-slate-600">ชื่อบอร์ดเกม</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="ชื่อเกม" required />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-${primaryColor}-500 outline-none transition-all`} placeholder="ชื่อเกม" required />
             </div>
 
             <div>
-              <label className="block text-sm font-bold mb-1 text-blue-600">รหัสสแกน (Barcode)</label>
-              <input type="text" value={barcode} onChange={e => setBarcode(e.target.value)} className="w-full px-4 py-2 border-2 border-blue-100 rounded-xl focus:border-blue-500 outline-none transition-all" placeholder="เช่น 001" />
+              <label className={`block text-sm font-bold mb-1 text-${primaryColor}-600`}>รหัสสแกน / ID ที่แสดงบนการ์ด</label>
+              <input type="text" value={barcode} onChange={e => setBarcode(e.target.value)} className={`w-full px-4 py-2 border-2 border-${primaryColor}-100 rounded-xl focus:border-${primaryColor}-500 outline-none transition-all`} placeholder="เช่น 001" />
             </div>
 
             <div>
@@ -161,23 +166,23 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
 
             <div>
               <label className="block text-sm font-bold mb-1 text-slate-600">หมวดหมู่</label>
-              <select value={category} onChange={e => setCategory(e.target.value)} className="w-full px-4 py-2 border rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={category} onChange={e => setCategory(e.target.value)} className={`w-full px-4 py-2 border rounded-xl bg-white outline-none focus:ring-2 focus:ring-${primaryColor}-500`}>
                 {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-bold mb-1 text-slate-600">คำอธิบายสั้นๆ</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" rows={2} placeholder="รายละเอียดเกม..." required />
+              <textarea value={description} onChange={e => setDescription(e.target.value)} className={`w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-${primaryColor}-500`} rows={2} placeholder="รายละเอียดเกม..." required />
             </div>
 
             <div className="flex items-center gap-2 py-2">
-              <input type="checkbox" id="pop" checked={isPopular} onChange={e => setIsPopular(e.target.checked)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <input type="checkbox" id="pop" checked={isPopular} onChange={e => setIsPopular(e.target.checked)} className={`w-5 h-5 rounded border-gray-300 text-${primaryColor}-600 focus:ring-${primaryColor}-500`} />
               <label htmlFor="pop" className="text-sm font-bold text-slate-700">แสดงในรายการแนะนำ (ยอดนิยม)</label>
             </div>
 
             <div className="flex gap-2 pt-2">
-              <button type="submit" className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30">
+              <button type="submit" className={`flex-1 bg-${primaryColor}-600 text-white font-black py-4 rounded-2xl hover:bg-${primaryColor}-700 transition shadow-lg shadow-${primaryColor}-500/30`}>
                 {editingId ? 'บันทึกการแก้ไข' : 'เพิ่มเกมใหม่'}
               </button>
               {editingId && (
@@ -211,16 +216,16 @@ const ManageGamesView: React.FC<ManageGamesViewProps> = ({ boardGames, onAddGame
               <div 
                 key={game.id} 
                 onClick={() => setSelectedIds(prev => prev.includes(game.id) ? prev.filter(i => i !== game.id) : [...prev, game.id])}
-                className={`flex items-center gap-4 p-3 rounded-2xl border-2 transition-all cursor-pointer group ${selectedIds.includes(game.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
+                className={`flex items-center gap-4 p-3 rounded-2xl border-2 transition-all cursor-pointer group ${selectedIds.includes(game.id) ? `border-${primaryColor}-500 bg-${primaryColor}-50` : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
               >
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(game.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white border-slate-200'}`}>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(game.id) ? `bg-${primaryColor}-500 border-${primaryColor}-500 text-white` : 'bg-white border-slate-200'}`}>
                   {selectedIds.includes(game.id) && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>}
                 </div>
                 <img src={game.imageUrl} className="w-12 h-12 object-cover rounded-xl shadow-sm" alt={game.name} />
                 <div className="flex-1 min-w-0">
                   <p className="font-black text-slate-800 text-sm truncate">{game.name}</p>
                   <div className="flex gap-2 items-center">
-                    <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">ID: {game.barcode || '-'}</span>
+                    <span className={`text-[10px] font-bold text-${primaryColor}-600 bg-${primaryColor}-100 px-2 py-0.5 rounded-full`}>#{game.barcode || game.id.toString().slice(-3)}</span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase">{game.category}</span>
                   </div>
                 </div>
